@@ -1,0 +1,40 @@
+name: HAK Pilot - hosovay_hak
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  scan-hosovay:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout quality scanner
+        uses: actions/checkout@v4
+        with:
+          path: quality
+      - name: Checkout hosovay_hak read-only
+        uses: actions/checkout@v4
+        with:
+          repository: saoluucvhak-pixel/hosovay_hak
+          ref: main
+          path: target
+          persist-credentials: false
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Scan target repository
+        run: |
+          mkdir -p quality/reports/hosovay
+          git -C target rev-parse HEAD > quality/reports/hosovay/target-commit.txt
+          node quality/bin/hak-quality.js target --out quality/reports/hosovay
+      - name: Generate finding summary
+        run: |
+          node -e 'const fs=require("fs");const p="quality/reports/hosovay/quality-report.json";const r=JSON.parse(fs.readFileSync(p,"utf8"));const lines=["# hosovay_hak static scan","", "Files: "+r.summary.files,"Findings: "+r.summary.findings,"Cycles: "+r.summary.cycles,"Skipped: "+r.summary.skipped,"",...r.findings.slice(0,100).map(f=>"- "+f.rule+" | "+f.file+":"+f.line+" | "+f.message)];fs.writeFileSync("quality/reports/hosovay/summary.md",lines.join("\n")+"\n")'
+      - name: Upload scan results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: hosovay-hak-pilot
+          path: quality/reports/hosovay/
