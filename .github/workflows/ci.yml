@@ -1,0 +1,23 @@
+name: HAK Code Quality CI
+on:
+  push:
+  pull_request:
+jobs:
+  test-and-scan:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node: [18, 20, 22]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+      - run: npm run check
+      - run: npm test
+      - run: node bin/hak-quality.js . --out reports
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: hak-quality-node-${{ matrix.node }}
+          path: reports/
