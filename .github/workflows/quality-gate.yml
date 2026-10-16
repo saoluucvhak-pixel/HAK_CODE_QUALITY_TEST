@@ -31,7 +31,8 @@ jobs:
         run: |
           node -e 'require("node:fs").writeFileSync("reports/checks.json",JSON.stringify({syntax:"PASS",unit:"PASS"}))'
           node bin/hak-gate.js --report reports/quality-report.json --checks reports/checks.json --policy config/quality-policy.json
-      - uses: actions/upload-artifact@v4
+      - name: End-to-end acceptance
+        run: npm run accept\n      - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: hak-v11-gate-node-${{ matrix.node }}
