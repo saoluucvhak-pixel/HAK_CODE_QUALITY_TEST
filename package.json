@@ -8,9 +8,10 @@
   },
   "scripts": {
     "test": "node --test tests/*.test.js",
-    "check": "node --check src/analyzer.js && node --check src/ruflo-adapter.js && node --check src/quality-policy.js && node --check src/quality-gate.js && node --check src/agent-orchestrator.js && node --check bin/hak-quality.js && node --check bin/hak-gate.js && node --check src/github-pr-review.js && node --check src/agent-findings.js",
+    "check": "node --check src/analyzer.js && node --check src/ruflo-adapter.js && node --check src/quality-policy.js && node --check src/quality-gate.js && node --check src/agent-orchestrator.js && node --check bin/hak-quality.js && node --check bin/hak-gate.js && node --check src/github-pr-review.js && node --check src/agent-findings.js && node --check src/acceptance.js && node --check bin/hak-accept.js",
     "scan": "node bin/hak-quality.js . --out reports",
-    "gate": "node bin/hak-gate.js --report reports/quality-report.json --checks reports/checks.json --policy config/quality-policy.json"
+    "gate": "node bin/hak-gate.js --report reports/quality-report.json --checks reports/checks.json --policy config/quality-policy.json",
+    "accept": "node bin/hak-accept.js --root . --checks reports/checks.json --policy config/quality-policy.json"
   },
   "engines": {
     "node": ">=18"
