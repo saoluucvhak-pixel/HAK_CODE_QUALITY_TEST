@@ -3,7 +3,7 @@ const fs = require("node:fs");
 const path = require("node:path");
 const crypto = require("node:crypto");
 const DEFAULT_EXCLUDE = new Set([".git","node_modules","dist","build","coverage","reports",".next",".cache"]);
-const EXTENSIONS = new Set([".js",".cjs",".mjs",".jsx",".ts",".tsx",".json",".css",".html",".py",".go"]);
+const EXTENSIONS = new Set([".gs",".js",".cjs",".mjs",".jsx",".ts",".tsx",".json",".css",".html",".py",".go"]);
 function scan(root, opts = {}) {
   root = path.resolve(root);
   const stat = fs.statSync(root);
@@ -28,7 +28,7 @@ function scan(root, opts = {}) {
       bytes += buf.length;
       files.push({path:rel,lines:lines.length,bytes:buf.length});
       if (lines.length > (opts.maxLines || 1000)) findings.push({rule:"long-file",severity:"warning",file:rel,line:0,message:"File exceeds recommended line count"});
-      if (/\.(js|cjs|mjs|jsx|ts|tsx)$/.test(ext)) {
+      if (/\.(gs|js|cjs|mjs|jsx|ts|tsx)$/.test(ext)) {
         lines.forEach((line,i)=>{
           if (/\bdebugger\s*;?/.test(line) && !/\/\//.test(line.slice(0,line.indexOf("debugger"))))
             findings.push({rule:"debugger",severity:"warning",file:rel,line:i+1,message:"Debugger statement found"});
