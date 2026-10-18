@@ -1,0 +1,53 @@
+name: HAK V11 Quality Gate
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  quality-gate:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node: [18, 20, 22]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+      - name: Initialize evidence
+        run: mkdir -p reports && printf '{"syntax":"NOT_RUN","unit":"NOT_RUN"}\n' > reports/checks.json
+      - name: Validate source
+        id: syntax
+        run: |
+          node --check src/analyzer.js
+          node --check src/ruflo-adapter.js
+          node --check src/quality-policy.js
+          node --check src/quality-gate.js
+          node --check bin/hak-gate.js
+      - name: Record syntax result
+        if: always()
+        env:
+          RESULT: ${{ steps.syntax.outcome }}
+        run: node -e 'const fs=require("fs"),p="reports/checks.json",c=JSON.parse(fs.readFileSync(p));c.syntax=process.env.RESULT==="success"?"PASS":process.env.RESULT==="failure"?"FAIL":"NOT_RUN";fs.writeFileSync(p,JSON.stringify(c))'
+      - name: Unit tests
+        id: unit
+        run: npm test
+      - name: Record unit result
+        if: always()
+        env:
+          RESULT: ${{ steps.unit.outcome }}
+        run: node -e 'const fs=require("fs"),p="reports/checks.json",c=JSON.parse(fs.readFileSync(p));c.unit=process.env.RESULT==="success"?"PASS":process.env.RESULT==="failure"?"FAIL":"NOT_RUN";fs.writeFileSync(p,JSON.stringify(c))'
+      - name: Scan repository
+        run: node bin/hak-quality.js . --out reports
+      - name: Verify deterministic gate
+        run: |
+          node bin/hak-gate.js --report reports/quality-report.json --checks reports/checks.json --policy config/quality-policy.json
+      - name: End-to-end acceptance
+        run: npm run accept
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: hak-v11-gate-node-${{ matrix.node }}
+          path: reports/
