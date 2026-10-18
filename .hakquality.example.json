@@ -1,0 +1,6 @@
+{
+  "exclude": ["vendor", "LuongHAK_Offline/libs"],
+  "maxLines": 1200,
+  "disable": ["unresolved-import"],
+  "severity": { "unsafe-inner-html": "error" }
+}

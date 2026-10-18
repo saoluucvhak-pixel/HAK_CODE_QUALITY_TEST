@@ -1,0 +1,4 @@
+{
+  "//": "Bản thân bộ rule và test chứa mẫu vi phạm có chủ đích nên không tự quét",
+  "exclude": ["tests", "src/rules.js"]
+}
