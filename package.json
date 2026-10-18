@@ -1,6 +1,6 @@
 {
   "name": "@hak/code-quality-test",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "private": true,
   "description": "HAK offline code quality and architecture scanner",
   "bin": {
@@ -8,8 +8,9 @@
   },
   "scripts": {
     "test": "node --test tests/*.test.js",
-    "check": "node --check src/analyzer.js && node --check src/rules.js && node --check bin/hak-quality.js",
-    "scan": "node bin/hak-quality.js . --out reports"
+    "check": "node --check src/analyzer.js && node --check src/rules.js && node --check src/gate.js && node --check src/memory.js && node --check src/history.js && node --check bin/hak-quality.js",
+    "scan": "node bin/hak-quality.js . --out reports",
+    "gate": "node bin/hak-quality.js gate --config hak-gate.json"
   },
   "engines": {
     "node": ">=18"

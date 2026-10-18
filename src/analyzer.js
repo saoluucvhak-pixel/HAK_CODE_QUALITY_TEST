@@ -64,6 +64,8 @@ function scan(root, opts = {}) {
         const rx = /(?:require\(\s*|from\s+|import\(\s*)["'](\.{1,2}\/[^"']+)["']/g;
         let match;
         while ((match = rx.exec(source))) imports.push({ from: rel, specifier: match[1] });
+      } else if (ext === ".py") {
+        pythonImports(source).forEach(spec => imports.push({ from: rel, specifier: spec, py: true }));
       }
       if (buf.length >= 64) {
         const hash = crypto.createHash("sha256").update(buf).digest("hex");
@@ -77,8 +79,21 @@ function scan(root, opts = {}) {
   const known = new Set(files.map(f => f.path));
   const edges = [], unresolved = [];
   for (const imp of imports) {
+    let candidates;
+    if (imp.py) {
+      const dots = imp.specifier.match(/^\.*/)[0].length, mod = imp.specifier.slice(dots).replace(/\./g, "/");
+      let dir = dots ? path.posix.dirname(imp.from) : "";
+      for (let k = 1; k < dots; k++) dir = path.posix.dirname(dir);
+      const base = path.posix.normalize(path.posix.join(dir || ".", mod || "__init__"));
+      candidates = [base + ".py", base + "/__init__.py"];
+      // import tuyệt đối trong cùng thư mục gói (kiểu script: `from observer import suggest`)
+      if (!dots) candidates.push(path.posix.normalize(path.posix.join(path.posix.dirname(imp.from), mod + ".py")));
+      const target = candidates.find(p => known.has(p) && p !== imp.from);
+      if (target) edges.push({ from: imp.from, to: target });
+      continue; // import thư viện ngoài của Python không báo unresolved
+    }
     const base = path.posix.normalize(path.posix.join(path.posix.dirname(imp.from), imp.specifier));
-    const candidates = [base, base + ".js", base + ".cjs", base + ".mjs", base + ".jsx", base + ".ts", base + ".tsx", base + ".json", base + "/index.js", base + "/index.ts"];
+    candidates = [base, base + ".js", base + ".cjs", base + ".mjs", base + ".jsx", base + ".ts", base + ".tsx", base + ".json", base + "/index.js", base + "/index.ts"];
     const target = candidates.find(p => known.has(p));
     if (target) edges.push({ from: imp.from, to: target });
     else unresolved.push(imp);
@@ -113,6 +128,35 @@ function scan(root, opts = {}) {
   };
 }
 
+/** Trích các module được import trong mã Python (import x.y / from .a import b), bỏ qua chuỗi và chú thích đơn giản. */
+function pythonImports(source) {
+  const out = [];
+  for (const raw of source.split(/\r?\n/)) {
+    const line = raw.replace(/#.*$/, "");
+    let m = line.match(/^\s*from\s+(\.*[\w.]*)\s+import\s+(.+)$/);
+    if (m) {
+      if (/^\.+$/.test(m[1])) m[2].split(",").forEach(n => { const name = n.trim().split(/\s+/)[0].replace(/[()]/g, ""); if (name) out.push(m[1] + name); });
+      else out.push(m[1]);
+      continue;
+    }
+    m = line.match(/^\s*import\s+(.+)$/);
+    if (m) m[1].split(",").forEach(n => { const name = n.trim().split(/\s+/)[0]; if (/^[\w.]+$/.test(name)) out.push(name); });
+  }
+  return out;
+}
+
+/** Các file bị ảnh hưởng (trực tiếp hoặc gián tiếp) khi những file `changed` thay đổi — gồm cả chính chúng. */
+function impactedFiles(report, changed) {
+  const reverse = new Map();
+  for (const e of report.architecture.edges) {
+    if (!reverse.has(e.to)) reverse.set(e.to, new Set());
+    reverse.get(e.to).add(e.from);
+  }
+  const seen = new Set(changed), todo = [...changed];
+  while (todo.length) for (const dep of reverse.get(todo.pop()) || []) if (!seen.has(dep)) { seen.add(dep); todo.push(dep); }
+  return [...seen].sort();
+}
+
 /** true nếu có phát hiện đạt mức failOn trở lên ("error" | "warning" | "info"). */
 function shouldFail(report, failOn) {
   if (!failOn) return false;
@@ -145,4 +189,4 @@ ${rules ? `<section><h2>Theo rule</h2><ul>${rules}</ul></section>` : ""}
 </main></body></html>`;
 }
 
-module.exports = { scan, htmlReport, shouldFail, loadConfig };
+module.exports = { scan, htmlReport, shouldFail, loadConfig, impactedFiles, pythonImports };

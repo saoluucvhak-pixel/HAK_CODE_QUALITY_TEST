@@ -13,9 +13,11 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node }}
-      - run: npm run check
-      - run: npm test
-      - run: node bin/hak-quality.js . --out reports --fail-on error
+      - name: Cổng chất lượng (chạy check, test, tự quét)
+        run: node bin/hak-quality.js gate --config hak-gate.json --out reports/hak-quality-results.json --commit ${{ github.sha }} --branch ${{ github.ref_name }}
+      - name: Lịch sử (trang tĩnh)
+        if: always()
+        run: node bin/hak-quality.js history reports/quality-report.json reports/hak-quality-results.json --out reports/history.html
       - uses: actions/upload-artifact@v4
         if: always()
         with:

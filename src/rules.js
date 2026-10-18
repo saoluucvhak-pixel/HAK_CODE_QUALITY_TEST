@@ -16,7 +16,7 @@ const SECRET_PATTERNS = [
   { name: "Private key", rx: /-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----/ },
 ];
 // Gán mật khẩu/khóa bằng chuỗi cố định: password = "abc123", apiKey: 'xyz...'
-const SECRET_ASSIGN = /\b(pass(?:word)?|pwd|mat_?khau|secret|api[_-]?key|access[_-]?token|bot[_-]?token)\b["']?\s*[:=]\s*["'`]([^"'`\s]{6,})["'`]/i;
+const SECRET_ASSIGN = /(?<![\w-])(pass(?:word)?|pwd|mat_?khau|secret|api[_-]?key|access[_-]?token|bot[_-]?token)\b["']?\s*[:=]\s*["'`]([^"'`\s]{6,})["'`]/i;
 const PLACEHOLDER = /^(x+|\*+|your[_-]|<|\$\{|process\.env|changeme|example|test|dummy|placeholder)/i;
 
 function ignored(line, rule) {
@@ -26,7 +26,7 @@ function ignored(line, rule) {
 
 function lineRules(rel, lines) {
   const out = [];
-  const isJs = JS_LIKE.test(rel), isHtml = HTML_LIKE.test(rel);
+  const isJs = JS_LIKE.test(rel), isHtml = HTML_LIKE.test(rel), isPy = /\.py$/i.test(rel);
   const push = (rule, severity, i, message) => { if (!ignored(lines[i], rule)) out.push({ rule, severity, line: i + 1, message }); };
 
   lines.forEach((line, i) => {
@@ -34,11 +34,21 @@ function lineRules(rel, lines) {
     for (const p of SECRET_PATTERNS) {
       if (p.rx.test(line)) { push("hardcoded-secret", "error", i, `Có thể lộ ${p.name} trong mã nguồn — chuyển sang biến môi trường/PropertiesService`); break; }
     }
-    if (isJs || isHtml) {
+    if (isJs || isHtml || isPy) {
       const m = line.match(SECRET_ASSIGN);
       if (m && !PLACEHOLDER.test(m[2])) push("hardcoded-secret", "error", i, `Gán "${m[1]}" bằng chuỗi cố định — không lưu mật khẩu/khóa trong code`);
+      // Tắt kiểm tra chứng chỉ TLS (Python requests, Node https, biến môi trường)
+      if (/\bverify\s*=\s*False\b/.test(line) || /\brejectUnauthorized\s*:\s*false\b/.test(line) || /NODE_TLS_REJECT_UNAUTHORIZED\s*=\s*["']?0/.test(line))
+        push("tls-verify-disabled", "error", i, "Tắt kiểm tra chứng chỉ TLS — kẻ gian có thể đọc/sửa dữ liệu trên đường truyền");
+    }
+    if (isPy) {
+      if (/\bshell\s*=\s*True\b/.test(line)) push("shell-injection-risk", "warning", i, "subprocess với shell=True — truyền argv dạng danh sách, shell=False");
+      if (/(^|[^\w.])(eval|exec)\s*\(/.test(line)) push("eval-usage", "warning", i, "eval/exec chạy chuỗi như code — dễ bị chèn mã");
+      if (/^\s*except\s*:\s*(#.*)?$/.test(line)) push("bare-except", "warning", i, "except: trống nuốt mọi lỗi (kể cả Ctrl+C) — bắt đúng loại lỗi");
+      return;
     }
     if (!(isJs || isHtml)) return;
+    if (isJs && /\b(exec|execSync)\s*\(\s*(`[^`]*\$\{|[^'"`)\s][^,)]*\+)/.test(line)) push("shell-injection-risk", "warning", i, "child_process.exec với chuỗi ghép — dùng execFile/spawn với mảng tham số");
 
     // 2. Electron webPreferences không an toàn
     if (/\bnodeIntegration\s*:\s*true\b/.test(line)) push("electron-insecure-webpreferences", "error", i, "nodeIntegration: true cho phép trang web chạy lệnh hệ thống — đặt false, dùng preload + contextBridge");

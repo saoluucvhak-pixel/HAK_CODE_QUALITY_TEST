@@ -125,3 +125,7 @@ test("innerHTML = \"\" rồi lệnh khác trên cùng dòng không bị báo; JS
   "ui.js": 'list.innerHTML = ""; list.appendChild(x);\n',
   "data.json": JSON.stringify(Array.from({ length: 1500 }, (_, i) => i), null, 1),
 }, dir => assert.deepEqual(rules(scan(dir)), [])));
+
+test("tên khóa có gạch nối (vd 'hardcoded-secret': 'security') không bị coi là mật khẩu", () => fixture({
+  "map.js": 'const M = { "hardcoded-secret": "security", "api-key-rotation": "weekly" };\nconst x = { secret: "Abc123xyz9" };\n',
+}, dir => assert.deepEqual(scan(dir).findings.filter(f => f.rule === "hardcoded-secret").map(f => f.line), [2])));

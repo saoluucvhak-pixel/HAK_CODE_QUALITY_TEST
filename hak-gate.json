@@ -1,0 +1,8 @@
+{
+  "project": "HAK_CODE_QUALITY_TEST",
+  "checks": [
+    { "name": "Cú pháp", "command": ["npm", "run", "check"], "timeoutSeconds": 60 },
+    { "name": "Unit test", "command": ["node", "--test", "tests/analyzer.test.js", "tests/rules.test.js", "tests/v03.test.js"], "timeoutSeconds": 120 },
+    { "name": "Tự quét — không lỗi mức error", "command": ["node", "bin/hak-quality.js", ".", "--out", "reports", "--fail-on", "error"], "timeoutSeconds": 60 }
+  ]
+}
