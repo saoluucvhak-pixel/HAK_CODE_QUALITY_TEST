@@ -40,7 +40,7 @@ function scan(root, opts = {}) {
       if (['.js','.cjs','.mjs','.gs'].includes(ext)) {
         if (ext === '.gs' && !config.appsScript.enabled) coverage.unsupportedSyntax.push({file:rel,reason:'Apps Script checks disabled'});
         else try {
-          record.ast = parse(source,false,ext === '.gs'); coverage.parsedUnits++;
+          record.ast = parse(source,false,ext === '.gs',ext === '.mjs'); coverage.parsedUnits++;
           walk(record.ast,node => {
             if (node.type === 'DebuggerStatement') add('debugger',rel,node.loc.start.line,'Debugger statement found');
             let specifier = null;

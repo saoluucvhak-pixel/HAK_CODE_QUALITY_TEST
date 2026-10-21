@@ -41,11 +41,11 @@ function inspectAppsScript(records, config, add, coverage) {
     const lineAt = i => html.slice(0,i).split(/\r?\n/).length - 1;
     for (const match of html.matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script\s*>/gi)) {
       const attrs = match[1], code = match[2], offset = lineAt(match.index + match[0].indexOf(">") + 1);
-      const type = /\btype\s*=\s*["']([^"']+)["']/i.exec(attrs);
-      if (/\bsrc\s*=/i.test(attrs)) { unresolved.push({kind:"external-script",from:record.path,line:offset+1,reason:"External scripts are not fetched"}); continue; }
+      const type = /(?:^|\s)type\s*=\s*["']([^"']+)["']/i.exec(attrs);
+      if (/(?:^|\s)src\s*=/i.test(attrs)) { unresolved.push({kind:"external-script",from:record.path,line:offset+1,reason:"External scripts are not fetched"}); continue; }
       if (type && !["module","text/javascript","application/javascript"].includes(type[1].toLowerCase())) continue;
       try {
-        const ast = parse(maskTemplates(code));
+        const ast = parse(maskTemplates(code),false,false,!!type && type[1].toLowerCase() === "module");
         coverage.parsedUnits++;
         // Module-local declarations are not globals available to HTML onclick.
         if (!type || type[1].toLowerCase() !== "module") declarationsInto(ast,client);
@@ -66,7 +66,7 @@ function inspectAppsScript(records, config, add, coverage) {
     // Extract attributes only from tags, never from JS strings inside script bodies.
     const tags = html.replace(/<script\b[^>]*>[\s\S]*?<\/script\s*>/gi,s => s.replace(/[^\r\n]/g," "));
     for (const tag of tags.matchAll(/<[A-Za-z](?:"[^"]*"|'[^']*'|[^'">])*>/g)) {
-      for (const attr of tag[0].matchAll(/\bon[a-z]+\s*=\s*("([^"]*)"|'([^']*)')/gi)) {
+      for (const attr of tag[0].matchAll(/(?:^|\s)on[a-z]+\s*=\s*("([^"]*)"|'([^']*)')/gi)) {
         const raw = attr[2] === undefined ? attr[3] : attr[2];
         const code = raw.replace(/&(?:quot|apos|amp|lt|gt|#(\d+)|#x([\da-f]+));/gi,(s,n,h) => n || h ? String.fromCodePoint(parseInt(n || h,h ? 16 : 10)) : ({"&quot;":'"',"&apos;":"'","&amp;":"&","&lt;":"<","&gt;":">"}[s.toLowerCase()]));
         const offset = lineAt(tag.index + attr.index);

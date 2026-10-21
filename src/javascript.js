@@ -9,8 +9,9 @@ function walk(node, visit) {
     else if (value && typeof value.type === "string") walk(value, visit);
   }
 }
-function parse(source, handler = false, scriptOnly = false) {
+function parse(source, handler = false, scriptOnly = false, moduleOnly = false) {
   const options = {ecmaVersion:"latest",locations:true,allowHashBang:true,allowReturnOutsideFunction:handler};
+  if (moduleOnly) return acorn.parse(source,{...options,sourceType:"module"});
   try { return acorn.parse(source,{...options,sourceType:"script"}); }
   catch (scriptError) {
     if (handler || scriptOnly) throw scriptError;
