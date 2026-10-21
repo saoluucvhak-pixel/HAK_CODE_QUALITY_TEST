@@ -14,7 +14,7 @@ test("does not traverse excluded directories",()=>fixture(dir=>{
  assert.equal(scan(dir).summary.files,1);
 }));
 test("reports debugger and duplicate content",()=>fixture(dir=>{
- const body="debugger;\n"+"const x = 1;".repeat(10);
+ const body="debugger;\n"+"var x = 1;".repeat(10);
  fs.writeFileSync(path.join(dir,"a.js"),body);fs.writeFileSync(path.join(dir,"b.js"),body);
  const report=scan(dir);
  assert.ok(report.findings.some(f=>f.rule==="debugger"));

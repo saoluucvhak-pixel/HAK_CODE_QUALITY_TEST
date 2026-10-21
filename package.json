@@ -1,6 +1,6 @@
 {
   "name": "@hak/code-quality-test",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "description": "HAK offline code quality and architecture scanner",
   "bin": {
@@ -8,11 +8,14 @@
   },
   "scripts": {
     "test": "node --test tests/*.test.js",
-    "check": "node --check src/analyzer.js && node --check bin/hak-quality.js",
+    "check": "node --check src/analyzer.js && node --check src/config.js && node --check src/javascript.js && node --check src/appsscript.js && node --check src/report.js && node --check bin/hak-quality.js",
     "scan": "node bin/hak-quality.js . --out reports"
   },
   "engines": {
     "node": ">=18"
   },
-  "license": "UNLICENSED"
+  "license": "UNLICENSED",
+  "dependencies": {
+    "acorn": "8.15.0"
+  }
 }
