@@ -1,0 +1,21 @@
+{
+  "maxFiles": 20000,
+  "maxBytes": 2097152,
+  "maxLines": 1000,
+  "exclude": [],
+  "failOn": "error",
+  "rules": {
+    "long-file": "warning",
+    "debugger": "warning",
+    "syntax": "error",
+    "missing-include": "error",
+    "missing-server-function": "error",
+    "missing-handler": "warning"
+  },
+  "appsScript": {
+    "enabled": true,
+    "rpcFactories": [],
+    "clientGlobals": [],
+    "serverGlobals": []
+  }
+}

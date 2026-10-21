@@ -1,21 +1,7 @@
-# HAK Code Quality — quality gates (dự thảo)
+# Quality gates — trạng thái v0.2.0
 
-## Code Quality
-- Chạy đúng test/lint/build script hiện có của từng repository.
-- Không chấp nhận regression trong các bài test quan trọng.
-- Báo cáo số test pass/fail/skip và commit SHA được kiểm tra.
+Đã triển khai scanner tĩnh, kiểm tra cú pháp JS/Apps Script bằng AST, đối chiếu include/RPC/inline handler, cấu hình mức lỗi và báo cáo JSON/HTML có phạm vi kiểm tra. CI của công cụ chạy kiểm tra cú pháp, unit/integration tests và tự quét mã công cụ trên Node 18/20/22.
 
-## Architecture Analyzer
-- Liệt kê entry points, module boundaries, import graph và vòng phụ thuộc.
-- Kiểm tra coupling giữa UI, nghiệp vụ và persistence.
+Chưa triển khai tự chạy test/build của repo đích, coverage runtime, theo dõi tài nguyên, đánh giá coupling theo miền nghiệp vụ hoặc Observer chạy nền. Không gọi kết quả static scan là đã kiểm thử ứng dụng.
 
-## Observer
-- Ghi nhận lỗi có thể tái hiện, thời gian thao tác và tài nguyên sử dụng bằng dữ liệu tổng hợp.
-- Không thu thập mật khẩu, thông tin nhân sự hoặc dữ liệu lương nhạy cảm.
-
-## Dashboard
-- Tổng hợp build, test, lint, độ bao phủ nếu đo được, và lỗi theo P0/P1/P2.
-- Mỗi chỉ số phải có nguồn đo và thời điểm đo; không tự tạo số liệu.
-
-## Trạng thái
-Chưa triển khai engine analyzer, observer hoặc dashboard. Đây là đặc tả kiểm thử để phát triển tiếp.
+Chi tiết cấu hình và mã thoát: xem README.md. File tham khảo cấu hình: .hakquality.example.json. Schema báo cáo tăng lên 2, giữ các trường cũ và bổ sung gate/coverage/appsScript/limitations.
