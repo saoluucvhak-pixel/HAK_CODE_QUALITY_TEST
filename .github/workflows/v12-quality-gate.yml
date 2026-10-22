@@ -1,0 +1,37 @@
+name: HAK V12 Quality Gate
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        node: [18, 20, 22]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - run: npm run check
+      - run: npm test
+      - name: Strict self scan
+        run: node bin/hak-quality.js . --out reports --fail-on error
+      - name: Validate machine-readable quality contract
+        run: node scripts/validate-quality-report.js reports/quality-report.json
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: hak-v12-quality-node-${{ matrix.node }}
+          path: reports/
+          if-no-files-found: ignore
+          retention-days: 14
