@@ -1,0 +1,31 @@
+name: HAK Optional Security Audit
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - '.github/workflows/security-audit.yml'
+      - 'src/**'
+      - 'bin/**'
+      - 'package.json'
+permissions:
+  contents: read
+jobs:
+  semgrep:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install Semgrep
+        run: python -m pip install 'semgrep>=1.100,<2'
+      - name: Run Semgrep security rules
+        run: semgrep scan --config p/security-audit --error --json --output semgrep-results.json .
+      - name: Upload audit evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: semgrep-security-report
+          path: semgrep-results.json
+          if-no-files-found: warn
