@@ -1,0 +1,36 @@
+name: HAK Dashboard Browser Smoke Tests
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - '.github/workflows/dashboard-e2e.yml'
+      - 'src/report.js'
+      - 'tests/dashboard.spec.js'
+      - 'package.json'
+      - 'package-lock.json'
+permissions:
+  contents: read
+jobs:
+  playwright:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - name: Install test-only Playwright
+        run: npm install --no-save --package-lock=false @playwright/test@1.56.1
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+      - name: Run browser tests
+        run: npx playwright test tests/dashboard.spec.js --project=chromium --reporter=line
+      - name: Upload browser test evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: dashboard-playwright-results
+          path: test-results/
+          if-no-files-found: ignore
