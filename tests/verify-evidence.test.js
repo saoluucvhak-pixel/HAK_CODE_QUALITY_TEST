@@ -1,0 +1,14 @@
+"use strict";
+const {test} = require("node:test");
+const assert = require("node:assert/strict");
+const {verifyEvidence} = require("../bin/verify-evidence");
+const sha = "a".repeat(40);
+const url = "https://github.com/saoluucvhak-pixel/HAK_CODE_QUALITY_TEST/actions/runs/123";
+const good = () => ({targetSha:sha,criticalFindings:0,highFindings:0,humanApproved:true,checks:["unit","static","security","business","regression"].map(name=>({name,status:"PASS",targetSha:sha,runUrl:url}))});
+test("complete evidence passes",()=>assert.equal(verifyEvidence(good()).status,"PASS"));
+test("missing evidence blocks",()=>{const x=good();x.checks.pop();assert.equal(verifyEvidence(x).status,"BLOCK");});
+test("failed security blocks",()=>{const x=good();x.checks[2].status="FAIL";assert.equal(verifyEvidence(x).status,"BLOCK");});
+test("mismatched commit blocks",()=>{const x=good();x.checks[1].targetSha="b".repeat(40);assert.equal(verifyEvidence(x).status,"BLOCK");});
+test("high findings block",()=>{const x=good();x.highFindings=1;assert.equal(verifyEvidence(x).status,"BLOCK");});
+test("human review blocks",()=>{const x=good();x.humanApproved=false;assert.equal(verifyEvidence(x).status,"BLOCK");});
+test("duplicate check blocks",()=>{const x=good();x.checks.push(x.checks[0]);assert.equal(verifyEvidence(x).status,"BLOCK");});
